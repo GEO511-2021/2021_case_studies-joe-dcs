@@ -5,12 +5,12 @@ library(ggplot2); library(gapminder); library(dplyr)
 no_kuwait <- filter(gapminder, country != "Kuwait")
 
 #plot this 
-p1 <- ggplot(no_kuwait, aes(lifeExp, gdpPercap, color = continent, size = pop/10000))+
+p1 <- ggplot(no_kuwait, aes(lifeExp, gdpPercap, color = continent, size = pop/100000))+
   theme_bw()+
   geom_point()+
   facet_wrap(~year,nrow=1)+
   scale_y_continuous(trans = "sqrt")+
-  labs(x="Life Expectancy", y="GDP per Capita")
+  labs(x="Life Expectancy", y="GDP per Capita", size = "Population (100k)")
 p1
 
 ggsave("Plot1.png", width = 15, height = 5)
