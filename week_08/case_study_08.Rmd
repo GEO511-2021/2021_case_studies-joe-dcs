@@ -1,7 +1,55 @@
 ---
 title: "Case Study 08"
-author: Your Name
-date: August 1, 2020
-output: github_document
+author: Joe Benz
+date: October 26, 2021
+output:
+  html_document: default
+  pdf_document: default
+  powerpoint_presentation: default
+  word_document: default
 ---
+
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(kableExtra)
+```
+
+```{r}
+data <- read_table(file = "ftp://aftp.cmdl.noaa.gov/products/trends/co2/co2_annmean_mlo.txt", skip = 57, col_names = c("year", "mean", "unc"))
  
+data
+```
+
+
+
+```{r echo=FALSE}
+ggplot(data) +
+  aes(x = year, y = mean) +
+  geom_line(size = 2.25, colour = "#E00808") +
+  labs(
+    x = "Year",
+    y = "Mean CO2 (ppm)",
+    title = "Mean Annual CO2 in Mauna Loa"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 30L,
+    hjust = 0.5),
+    axis.title.y = element_text(size = 20L),
+    axis.title.x = element_text(size = 20L),
+    axis.text = element_text(size = 15L)
+  )
+
+```
+```{r}
+data%>%
+  arrange(desc(year))%>%
+  filter(year>2015)%>%
+  kable()
+
+```
+#rmarkdown::render("case_study_08.Rmd", output_format = "all")
