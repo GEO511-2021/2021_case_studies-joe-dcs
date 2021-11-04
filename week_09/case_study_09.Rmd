@@ -27,7 +27,7 @@ storm_data <- read_sf(list.files(tdir,pattern=".shp",full.names = T))
 ```
 
 ```{r}
-storms <- storm_data%>%
+storms <- storm_data %>%
   filter(SEASON > 1949)%>% #Only use data from 1950 to present
   mutate_if(is.numeric, function(x) ifelse(x==-999.0,NA,x))%>% #Fix NA values
   mutate(decade=(floor(year/10)*10)) #create decade column
@@ -53,7 +53,7 @@ storm_states <- st_join(storms, states, join = st_intersects,left = F)%>%
   arrange(desc(storms))%>%
   slice(1:5)
 
-top5 <- select(storm_states, -last_col())
+top5 <- st_set_geometry(storm_states, NULL) #remove geometry column
 #make table
 top5
 ```
