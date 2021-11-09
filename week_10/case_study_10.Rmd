@@ -1,7 +1,152 @@
 ---
 title: "Case Study 10"
-author: Your Name
-date: August 1, 2020
+author: Joe Benz
+date: November 9, 2021
 output: github_document
 ---
+
+ Load Requisite Libraries
+```{r}
+library(raster)
+library(rasterVis)
+library(rgdal)
+library(ggmap)
+library(tidyverse)
+library(knitr)
+library(ncdf4)
+```
+
+ Create folder for data and download it
+```{r}
+dir.create("data",showWarnings = F)
+
+lulc_url="https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MCD12Q1.051_aid0001.nc?raw=true"
+lst_url="https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MOD11A2.006_aid0001.nc?raw=true"
+
+# download them
+download.file(lulc_url,destfile="data/MCD12Q1.051_aid0001.nc", mode="wb")
+download.file(lst_url,destfile="data/MOD11A2.006_aid0001.nc", mode="wb")
+
+#load data into R
+lulc=stack("data/MCD12Q1.051_aid0001.nc",varname="Land_Cover_Type_1")
+lst=stack("data/MOD11A2.006_aid0001.nc",varname="LST_Day_1km")
+
+#plot it
+lulc=lulc[[13]]
+plot(lulc)
+```
+
+ Assign Land Cover Data
+```{r}
+Land_Cover_Type_1 = c(
+    Water = 0, 
+    `Evergreen Needleleaf forest` = 1, 
+    `Evergreen Broadleaf forest` = 2,
+    `Deciduous Needleleaf forest` = 3, 
+    `Deciduous Broadleaf forest` = 4,
+    `Mixed forest` = 5, 
+    `Closed shrublands` = 6,
+    `Open shrublands` = 7,
+    `Woody savannas` = 8, 
+    Savannas = 9,
+    Grasslands = 10,
+    `Permanent wetlands` = 11, 
+    Croplands = 12,
+    `Urban & built-up` = 13,
+    `Cropland/Natural vegetation mosaic` = 14, 
+    `Snow & ice` = 15,
+    `Barren/Sparsely vegetated` = 16, 
+    Unclassified = 254,
+    NoDataFill = 255)
+
+lcd=data.frame(
+  ID=Land_Cover_Type_1,
+  landcover=names(Land_Cover_Type_1),
+  col=c("#000080","#008000","#00FF00", "#99CC00","#99FF99", "#339966", "#993366", "#FFCC99", "#CCFFCC", "#FFCC00", "#FF9900", "#006699", "#FFFF00", "#FF0000", "#999966", "#FFFFFF", "#808080", "#000000", "#000000"),
+  stringsAsFactors = F)
+# colors from https://lpdaac.usgs.gov/about/news_archive/modisterra_land_cover_types_yearly_l3_global_005deg_cmg_mod12c1
+kable(head(lcd))
+
+# convert to raster (easy)
+lulc=as.factor(lulc)
+
+# update the RAT with a left join
+levels(lulc)=left_join(levels(lulc)[[1]],lcd)
+```
+ 
+ Plot it
+```{r}
+# plot it
+gplot(lulc)+
+  geom_raster(aes(fill=as.factor(value)))+
+  scale_fill_manual(values=levels(lulc)[[1]]$col,
+                    labels=levels(lulc)[[1]]$landcover,
+                    name="Landcover Type")+
+  coord_equal()+
+  theme(legend.position = "bottom")+
+  guides(fill=guide_legend(ncol=1,byrow=TRUE))
+
+plot(lst[[1:12]])
+
+#convert Kelvin to Celcius
+offs(lst)=-273.15
+plot(lst[[1:10]])
+
+#Convert default names to a proper R Date format by dropping the “X”
+tdates=names(lst)%>%
+  sub(pattern="X",replacement="")%>%
+  as.Date("%Y.%m.%d")
+
+names(lst)=1:nlayers(lst)
+lst=setZ(lst,tdates)
+```
+ 
+ Part 1
+```{r}
+#define new spatial point
+lw=SpatialPoints(data.frame(x= -78.791547,y=43.007211))
+
+#assign its projection
+crs(lw) <- "+proj=longlat"
+
+#match CRS to raster crs
+spTransform(lw, CRSobj = "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
+
+#extract LST data at this location
+dayduh <- raster::extract(lst,lw,buffer=1000,fun=mean,na.rm=T)
+
+#transpose
+Land_Surface_Temperature_C <- t(dayduh)
+
+Date <- getZ(lst)
+
+dayduh2 <- data.frame(dates, Land_Surface_Temperature_C)
+
+plot1 <- ggplot(dayduh2, aes(Date, Land_Surface_Temperature_C))+
+  geom_point()+
+  geom_smooth(span=0.05, n=1000)
+
+plot1
+
+```
+
+Part 2
+```{r}
+#convert dates to months
+tmonth <- as.numeric(format(getZ(lst),"%m"))
+
+lst_month <- stackApply(lst, indices=tmonth, fun=mean)
+
+names(lst_month)=month.name
+
+plot2 <- levelplot(lst_month)
+
+plot2
+
+table1 <- cellStats(lst_month,mean)
+
+table1
+```
+
+ 
  
