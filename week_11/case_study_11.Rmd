@@ -15,7 +15,7 @@ library(mapview) # new package that makes easy leaflet maps
 library(foreach)
 library(doParallel)
 registerDoParallel(4)
-getDoParWorkers() # check registered cores
+getDoParWorkers() 
 ```
 
 Census API Key
