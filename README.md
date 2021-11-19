@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #Coursework for Spatial Data Science
+=======
+#This is a test
+>>>>>>> fbf98cb1282880ae90f25c8c17e4bda377f444ad
 
 # Repository to hold class activities for GEO511
 

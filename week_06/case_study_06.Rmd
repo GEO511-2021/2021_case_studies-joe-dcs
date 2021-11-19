@@ -1,7 +1,61 @@
 ---
 title: "Case Study 06"
-author: Your Name
-date: August 1, 2020
+author: Joe Benz
+date: October 12, 2021
 output: github_document
 ---
  
+```{r}
+#load libraries & data
+library(raster)
+library(sp)
+library(spData)
+library(tidyverse)
+library(sf)
+
+data(world)  #load 'world' data from spData package
+tmax_monthly <- getData(name = "worldclim", var="tmax", res=10)
+```
+#Data Prep
+```{r}
+#prep polygon data
+world_sp <- world %>%
+  filter(continent != "Antarctica") %>%
+  as("Spatial")
+
+#prep climate data
+gain(tmax_monthly) <- 0.1
+
+tmax_annual <- tmax_monthly%>%
+                  max()
+names(tmax_annual) <- "tmax"
+```
+
+#Extract max values
+
+```{r}
+max_temp <- raster::extract(tmax_annual, world_sp, fun=max, na.rm=T, small=T, sp=T)%>%
+  st_as_sf()
+```
+
+#Plot max values
+
+```{r}
+ggplot(max_temp)+
+  geom_sf(aes(fill=tmax))+
+  scale_fill_viridis_c(name="Annual\nMaximum\nTemperature (C)")+
+  theme(legend.position = 'bottom')
+```
+
+#Max temperature by continent
+
+```{r}
+table <- max_temp%>%
+  st_set_geometry(NULL) %>%
+  group_by(continent) %>%
+  select(name_long, continent, tmax) %>%
+  top_n(1) %>%
+  arrange(desc(tmax))
+
+table
+```
